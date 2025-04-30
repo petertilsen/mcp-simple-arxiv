@@ -127,9 +127,9 @@ This will return:
 
 ## Development
 
-To install for development:
+To install fork for development:
 ```bash
-git clone https://github.com/andybrandt/mcp-simple-arxiv
+git clone https://github.com/petertilsen/mcp-simple-arxiv
 cd mcp-simple-arxiv
 pip install -e .
 ```
