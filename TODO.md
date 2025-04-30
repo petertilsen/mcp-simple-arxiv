@@ -51,12 +51,36 @@
    - Include all necessary metadata (authors, title, arXiv ID, etc.)
    - Handle special characters in titles and names correctly
 
-10. **Impact Metrics**
+10. **Impact Metrics** [PARTIALLY DONE]
     - Add citation count or other impact metrics if available
     - Consider alternative metrics like downloads or social media mentions
     - NOTE: Might require integration with additional APIs
+    - DONE: Basic citation metrics from Semantic Scholar API
+    - DONE: Sorting papers by citation count
+    - DONE: In-memory caching for citation data
 
-11. **HTML Paper Access**  [DONE]
+11. **HTML Paper Access** [DONE]
     - Add detection of HTML version availability
     - Include HTML URL in paper metadata when available
     - Add URL construction logic (changing PDF URL to HTML)
+
+12. **Persistent Caching System**
+    - Implement persistent caching for arXiv API responses
+    - Cache search results to reduce duplicate API calls
+    - Cache paper details for frequently accessed papers
+    - Use SQLite for storage to avoid external dependencies
+    - Add configurable cache expiration (default: 7 days)
+    - Respect arXiv API rate limits while refreshing cache
+
+13. **Persistent Citation Data**
+    - Extend the caching system to Semantic Scholar citation data
+    - Store citation counts and metadata in the same SQLite database
+    - Implement background refresh for citation data (weekly)
+    - Add cache invalidation for outdated citation information
+
+14. **Performance Improvements**
+    - Implement asynchronous batch processing for citation data
+    - Optimize memory usage for large result sets
+    - Add progress indicators for long-running operations
+    - Improve error handling for API failures
+    - Implement exponential backoff for retries

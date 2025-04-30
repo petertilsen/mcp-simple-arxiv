@@ -16,6 +16,7 @@ import mcp.types as types
 from mcp.server.stdio import stdio_server
 
 from .arxiv_client import ArxivClient
+from .citation_service import CitationService
 from .update_taxonomy import load_taxonomy, update_taxonomy_file
 
 logger = logging.getLogger(__name__)
@@ -34,6 +35,7 @@ def get_first_sentence(text: str, max_len: int = 200) -> str:
 
 app = Server("arxiv-server")
 arxiv_client = ArxivClient()
+citation_service = CitationService()
 
 @app.list_tools()
 async def list_tools() -> list[types.Tool]:
@@ -104,6 +106,32 @@ Examples:
             inputSchema={
                 "type": "object",
                 "properties": {},
+            }
+        ),
+        types.Tool(
+            name="get_most_cited_papers",
+            description="Find the most cited papers on arXiv for a given topic using citation data from Semantic Scholar",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "Search query to match against paper titles and abstracts"
+                    },
+                    "max_results": {
+                        "type": "number",
+                        "description": "Maximum number of papers to search through (default: 20)",
+                        "minimum": 5,
+                        "maximum": 50
+                    },
+                    "limit": {
+                        "type": "number",
+                        "description": "Maximum number of cited papers to return (default: 5)",
+                        "minimum": 1,
+                        "maximum": 20
+                    }
+                },
+                "required": ["query"]
             }
         )
     ]
@@ -225,6 +253,49 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
                     text=f"Error updating taxonomy: {str(e)}",
                     isError=True
                 )]
+                
+        elif name == "get_most_cited_papers":
+            query = arguments["query"]
+            max_results = min(int(arguments.get("max_results", 20)), 50)
+            limit = min(int(arguments.get("limit", 5)), 20)
+            
+            # First search for papers
+            papers = await arxiv_client.search(query, max_results)
+            
+            if not papers:
+                return [types.TextContent(type="text", text=f"No papers found matching query: {query}")]
+            
+            # Then enrich with citation data and sort
+            cited_papers = citation_service.get_most_cited_papers(papers, limit)
+            
+            # Format results in a readable way
+            result = f"Most Cited Papers for '{query}':\n\n"
+            
+            if not cited_papers:
+                result += "No citation data available for the papers found."
+                return [types.TextContent(type="text", text=result)]
+            
+            for i, paper in enumerate(cited_papers, 1):
+                result += f"{i}. {paper['title']}\n"
+                result += f"   Authors: {', '.join(paper['authors'])}\n"
+                result += f"   ID: {paper['id']}\n"
+                
+                # Add citation data if available
+                if "citation_data" in paper:
+                    result += f"   Citations: {paper['citation_data'].get('citation_count', 'Unknown')}\n"
+                    if paper['citation_data'].get('year'):
+                        result += f"   Year: {paper['citation_data'].get('year')}\n"
+                
+                result += f"   Published: {paper['published']}\n"
+                
+                # Add first sentence of abstract
+                abstract_preview = get_first_sentence(paper['summary'])
+                result += f"   Preview: {abstract_preview}\n"
+                result += "\n"
+            
+            result += "\nNote: Citation data is provided by Semantic Scholar API and may not be complete for all papers."
+            
+            return [types.TextContent(type="text", text=result)]
             
         else:
             return [types.TextContent(

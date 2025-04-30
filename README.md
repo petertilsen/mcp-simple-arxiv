@@ -8,12 +8,13 @@ An MCP server that provides access to arXiv papers through their API.
 
 ## Features
 
-This server allows LLM clients (like Claude Desktop) to:
+This server allows LLM clients (like Claude Desktop and Amazon Q) to:
 - Search for scientific papers on arXiv by title and abstract content
 - Get paper metadata and abstracts
 - Access links to available paper formats (PDF/HTML)
+- **NEW**: Find the most cited papers on a topic using citation data from Semantic Scholar
 
-The server implements proper rate limiting according to arXiv's API guidelines (max 1 request every 3 seconds).
+The server implements proper rate limiting according to arXiv's API guidelines (max 1 request every 3 seconds) and Semantic Scholar API guidelines.
 
 ## Installation
 
@@ -30,7 +31,9 @@ npx -y @smithery/cli install mcp-simple-arxiv --client claude
 pip install mcp-simple-arxiv
 ```
 
-## Usage with Claude Desktop
+## Usage with Claude Desktop or Amazon Q
+
+### Claude Desktop Configuration
 
 Add this configuration to your `claude_desktop_config.json`:
 
@@ -63,11 +66,26 @@ Add this configuration to your `claude_desktop_config.json`:
 }
 ```
 
-After restarting Claude Desktop, the following capabilities will be available:
+### Amazon Q Configuration
+
+Add this configuration to your `~/.aws/amazonq/mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "simple-arxiv": {
+      "command": "python",
+      "args": ["-m", "mcp_simple_arxiv"]
+    }
+  }
+}
+```
+
+After restarting your LLM client, the following capabilities will be available:
 
 ### Searching Papers
 
-You can ask Claude to search for papers using queries like:
+You can search for papers using queries like:
 ```
 Can you search arXiv for recent papers about large language models?
 ```
@@ -93,6 +111,20 @@ This will return:
 - Paper abstract
 - Links to available formats (PDF/HTML)
 
+### Finding Most Cited Papers (NEW)
+
+You can now find the most influential papers on a topic based on citation count:
+```
+What are the most cited papers on quantum computing?
+```
+
+This will return:
+- Paper titles sorted by citation count
+- Number of citations for each paper
+- Publication year
+- Authors
+- Brief abstract preview
+
 ## Development
 
 To install for development:
@@ -102,12 +134,14 @@ cd mcp-simple-arxiv
 pip install -e .
 ```
 
-### arXiv API Guidelines
+### API Guidelines
 
-This server follows arXiv API usage guidelines:
-- Rate limiting to max 1 request per 3 seconds
+This server follows API usage guidelines:
+- arXiv API: Rate limiting to max 1 request per 3 seconds
+- Semantic Scholar API: Rate limiting to max 1 request per second
 - Single connection at a time
 - Proper error handling and retry logic
+- Caching to reduce API calls
 
 ## License
 

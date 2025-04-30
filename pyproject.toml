@@ -22,6 +22,7 @@ dependencies = [
     "feedparser",  # for parsing arXiv API responses
     "httpx",      # for making HTTP requests with async support
     "beautifulsoup4",  # for parsing arXiv taxonomy page
+    "requests",   # for making HTTP requests to Semantic Scholar API
 ]
 
 [project.urls]
